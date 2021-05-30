@@ -1,0 +1,78 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Values.global.componentName | quote }}
+  labels:
+    app: {{ .Values.global.componentName | quote }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.global.componentName | quote }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.global.componentName | quote }}
+    spec:
+      containers:
+      - image: {{ required "Need to pass the image" .Values.wordpress.imageTag | quote }}
+        name: {{ .Values.global.componentName | quote }}
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: {{ .Values.db.name | quote }}
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secret.name | quote }}
+              key: password
+        ports:
+        - containerPort: 80
+          name: {{ .Values.global.componentName | quote }}
+        resources:
+          limits:
+            memory: {{ .Values.wordpress.memory.limit | quote }}
+            {{- if .Values.wordpress.cpu.limit }}
+            cpu: {{ .Values.wordpress.cpu.limit | quote }}
+            {{- end }}
+        volumeMounts:
+        - name: "{{ .Values.global.componentName }}-storage"
+          mountPath: /var/www/html
+      volumes:
+      - name: "{{ .Values.global.componentName }}-storage"
+        persistentVolumeClaim:
+          claimName: "{{ .Values.global.componentName }}-pvc"
+--- 
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Values.db.name | quote }}
+  labels:
+    db: {{ .Values.db.name | quote }}
+spec:
+  selector:
+    matchLabels:
+      db: {{ .Values.db.name | quote }}
+  template:
+    metadata:
+      labels:
+        db: {{ .Values.db.name | quote }}
+    spec:
+      containers:
+      - image: {{ .Values.db.imageTag | quote }}
+        name: {{ .Values.db.name | quote }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secret.name | quote }}
+              key: password
+        ports:
+        - containerPort: 3306
+          name: {{ .Values.db.name | quote }}
+        volumeMounts:
+        - name: "{{ .Values.db.name }}-storage"
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: "{{ .Values.db.name }}-storage"
+        persistentVolumeClaim:
+          claimName: "{{ .Values.db.name }}-pvc"

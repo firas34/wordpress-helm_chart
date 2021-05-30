@@ -1,0 +1,29 @@
+global:
+  # componentName corresponds to the application name. 
+  componentName: "wordpress"
+  # componentVersion is the version of the application deployed. 
+  componentVersion: "latest"
+
+# wordpress container
+wordpress:
+  # replicas is the number of pod you would like in your deployment. Integer value.
+  replicas: 1
+  imageTag: "wordpress:4.8-apache"
+  port: 80
+  serviceType: LoadBalancer
+  cpu:
+    request: null
+    limit: null
+  memory:
+    request: null
+    limit: "1024Mi"
+
+# db container
+db:
+  name: mysql
+  imageTag: "mysql:5.6"
+  port: 3306
+
+# secret that containes mysql password
+secret:
+  name: db-passwd
